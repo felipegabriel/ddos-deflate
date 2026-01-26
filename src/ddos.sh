@@ -3,7 +3,7 @@
 # DDoS-Deflate Original Author: Zaf <zaf@vsnl.com>                           #
 ##############################################################################
 # Contributors:                                                              #
-# Jefferson González <jgmdev@gmail.com>                                      #
+# Jefferson GonzÃ¡lez <jgmdev@gmail.com>                                      #
 # Marc S. Brooks <devel@mbrooks.info>                                        #
 ##############################################################################
 # This program is distributed under the "Artistic License" Agreement         #
@@ -159,12 +159,16 @@ ban_ip()
             $IPF -q add "$next_number" deny all from "$1" to any
         elif [ "$FIREWALL" = "iptables" ]; then
             $IPT -I INPUT -s "$1" -j DROP
+        elif [ "$FIREWALL" = "ufw" ]; then
+            $UFW insert 1 deny from "$1" to any > /dev/null 2>&1
         fi
     else
         if [ "$FIREWALL" = "ipfw" ]; then
             rule_number=$(ipfw list | tail -1 | awk '/deny/{print $1}')
             next_number=$((rule_number + 1))
             $IPF -q add "$next_number" deny all from "$1" to any
+        elif [ "$FIREWALL" = "ufw" ]; then
+            $UFW insert 1 deny from "$1" to any > /dev/null 2>&1
         else
             $IPT6 -I INPUT -s "$1" -j DROP
         fi
@@ -190,11 +194,15 @@ unban_ip()
             $IPF -q delete "$rule_number"
         elif [ "$FIREWALL" = "iptables" ]; then
             $IPT -D INPUT -s "$1" -j DROP
+        elif [ "$FIREWALL" = "ufw" ]; then
+            $UFW delete deny from "$1" to any > /dev/null 2>&1
         fi
     else
         if [ "$FIREWALL" = "ipfw" ]; then
             rule_number=$($IPF list | awk "/$1/{print $1}")
             $IPF -q delete "$rule_number"
+        elif [ "$FIREWALL" = "ufw" ]; then
+            $UFW delete deny from "$1" to any > /dev/null 2>&1
         else
             $IPT6 -D INPUT -s "$1" -j DROP
         fi
@@ -1376,6 +1384,7 @@ detect_firewall()
         csf_where=$(whereis csf);
         ipf_where=$(whereis ipfw);
         ipt_where=$(whereis iptables);
+        ufw_where=$(whereis ufw);
 
         if [ -e "$APF" ]; then
             FIREWALL="apf"
@@ -1383,6 +1392,8 @@ detect_firewall()
             FIREWALL="csf"
         elif [ -e "$IPF" ]; then
             FIREWALL="ipfw"
+        elif [ -e "$UFW" ]; then
+            FIREWALL="ufw"
         elif [ -e "$IPT" ]; then
             FIREWALL="iptables"
         elif [ "$apf_where" != "apf:" ]; then
@@ -1394,6 +1405,9 @@ detect_firewall()
         elif [ "$ipf_where" != "ipfw:" ]; then
             FIREWALL="ipfw"
             IPF="ipfw"
+        elif [ "$ufw_where" != "ufw:" ]; then
+            FIREWALL="ufw"
+            UFW="ufw"
         elif [ "$ipt_where" != "iptables:" ]; then
             FIREWALL="iptables"
             IPT="iptables"
@@ -1536,6 +1550,7 @@ CSF="/usr/sbin/csf"
 IPF="/sbin/ipfw"
 IPT="/sbin/iptables"
 IPT6="/sbin/ip6tables"
+UFW="/usr/sbin/ufw"
 TC="/sbin/tc"
 FREQ=1
 DAEMON_FREQ=5
