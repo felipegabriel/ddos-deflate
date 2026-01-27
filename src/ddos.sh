@@ -1416,6 +1416,7 @@ detect_firewall()
             log_msg "error: no valid firewall found"
             exit 1
         fi
+        log_msg "firewall detected: $FIREWALL"
     fi
 }
 
