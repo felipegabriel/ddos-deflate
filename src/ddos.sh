@@ -396,8 +396,8 @@ ban_incoming_and_outgoing()
     get_connections | \
         # Extract the client ip
         awk '{print $6}' | \
-        # Strip port and [ ] brackets
-        sed -E "s/\\[//g; s/\\]//g; s/:[0-9]+$//g" | \
+        # Strip port, [ ] brackets and IPv4-mapped IPv6 prefix (::ffff:)
+        sed -E "s/\\[//g; s/\\]//g; s/:[0-9]+$//g; s/^::ffff://i" | \
         # Only leave non whitelisted, we add ::1 to ensure -v works for ipv6
         grepcidr -v -e "$SERVER_IP_LIST $whitelist ::1" 2>/dev/null | \
         # Sort addresses for uniq to work correctly
@@ -467,8 +467,8 @@ ban_only_incoming()
 
     # Only keep connections which are connected to local listening service
     awk 'NR==FNR{a[$1];next} $1 in a {print $2}' "$ALL_LISTENING_FULL" "$ALL_CONNS" | \
-        # Strip port and [ ] brackets
-        sed -E "s/\\[//g; s/\\]//g; s/:[0-9]+$//g" | \
+        # Strip port, [ ] brackets and IPv4-mapped IPv6 prefix (::ffff:)
+        sed -E "s/\\[//g; s/\\]//g; s/:[0-9]+$//g; s/^::ffff://i" | \
         # Only leave non whitelisted, we add ::1 to ensure -v works
         grepcidr -v -e "$SERVER_IP_LIST $whitelist ::1" 2>/dev/null | \
         # Sort addresses for uniq to work correctly
@@ -509,8 +509,8 @@ ban_by_port()
             # Print client ip and server port
             print $6 " " substr($5, RSTART+1, RLENGTH)
         }' | \
-        # Strip ipv6 brackets [ ]
-        sed -E "s/\\[//g; s/\\]//g;" | \
+        # Strip ipv6 brackets [ ] and IPv4-mapped IPv6 prefix (::ffff:)
+        sed -E "s/\\[//g; s/\\]//g; s/^::ffff://i" | \
         # Only leave non whitelisted, we add ::1 to ensure -v works for ipv6
         grepcidr -v -e "$SERVER_IP_LIST $whitelist ::1" 2>/dev/null | \
         # Sort addresses for uniq to work correctly
@@ -525,8 +525,8 @@ ban_by_port()
     echo "$ip_all_list" | \
         # Extract the client ip
         awk '{print $6}' | \
-        # Strip port and [ ] brackets
-        sed -E "s/\\[//g; s/\\]//g; s/:[0-9]+$//g" | \
+        # Strip port, [ ] brackets and IPv4-mapped IPv6 prefix (::ffff:)
+        sed -E "s/\\[//g; s/\\]//g; s/:[0-9]+$//g; s/^::ffff://i" | \
         # Only leave non whitelisted, we add ::1 to ensure -v works for ipv6
         grepcidr -v -e "$SERVER_IP_LIST $whitelist ::1" 2>/dev/null | \
         # Sort addresses for uniq to work correctly
